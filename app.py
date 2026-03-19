@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import joblib
 import matplotlib.pyplot as plt
 
 from sklearn.linear_model import LinearRegression
@@ -41,7 +40,6 @@ div.stButton > button {
 </style>
 """, unsafe_allow_html=True)
 
-
 # -----------------------------
 # SIDEBAR
 # -----------------------------
@@ -77,6 +75,7 @@ else:
 def preprocess_data(df, target_column):
     df = df.drop_duplicates()
     df = df.ffill()
+
     y = df[target_column]
     X = df.drop(columns=[target_column])
 
@@ -85,10 +84,9 @@ def preprocess_data(df, target_column):
     return X, y
 
 # -----------------------------
-# AUTO ML TRAINING
+# MODEL TRAINING
 # -----------------------------
 def train_best_model(X, y):
-
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
@@ -116,37 +114,19 @@ def train_best_model(X, y):
     return best_model, X.columns, best_name, best_score
 
 # -----------------------------
-# DYNAMIC PREDICTION
-# -----------------------------
-def predict_sales_dynamic(model, input_df, feature_columns):
-    input_df = input_df.reindex(columns=feature_columns, fill_value=0)
-    return max(0, model.predict(input_df)[0])
-
-# -----------------------------
-# DEFAULT MODEL FUNCTIONS
-# -----------------------------
-def predict_sales(price):
-    df_input = pd.DataFrame([{"price": price}])
-    df_input = df_input.reindex(columns=feature_columns, fill_value=0)
-    return max(0, model.predict(df_input)[0])
-
-
-
-# -----------------------------
 # RESULTS
 # -----------------------------
 if run:
 
-    # -----------------------------
-    # DATASET MODE (NEW VERSION 2)
-    # -----------------------------
-    if df is not None and target_column is not None:
-
-        st.info("Training model on uploaded dataset...")
+    if df is None:
+        st.error("Please upload a dataset to run the model.")
+    
+    else:
+        st.info("Training model...")
 
         X, y = preprocess_data(df, target_column)
 
-        model_dynamic, feature_cols, model_name, model_score = train_best_model(X, y)
+        model, feature_cols, model_name, model_score = train_best_model(X, y)
 
         st.success(f"Best Model: {model_name} (R²: {model_score:.3f})")
 
@@ -161,7 +141,9 @@ if run:
             if "price" in temp.columns:
                 temp["price"] = p
 
-            pred = predict_sales_dynamic(model_dynamic, temp, feature_cols)
+            temp = temp.reindex(columns=feature_cols, fill_value=0)
+
+            pred = max(0, model.predict(temp)[0])
             revenues.append(pred * p)
 
         prices = np.array(prices)
@@ -171,7 +153,7 @@ if run:
         optimal_price = prices[best_idx]
         max_revenue = revenues[best_idx]
 
-        base_sales = predict_sales_dynamic(model_dynamic, sample_row, feature_cols)
+        base_sales = max(0, model.predict(sample_row)[0])
         base_revenue = base_sales * price
 
         improvement = ((max_revenue - base_revenue) / base_revenue) * 100
@@ -185,26 +167,19 @@ if run:
 
         st.metric("Improvement (%)", f"{improvement:.2f}%")
 
-    
+        # Graph
+        st.markdown("### Price Optimization Curve")
 
-    # -----------------------------
-    # GRAPH (COMMON)
-    # -----------------------------
-    st.markdown("### Price Optimization Curve")
+        fig, ax = plt.subplots(figsize=(9,4))
 
-    fig, ax = plt.subplots(figsize=(9,4))
+        ax.plot(prices, revenues, color="#3B82F6", linewidth=2)
+        ax.axvline(optimal_price, linestyle='--', color="#22C55E")
 
-    ax.plot(prices, revenues, color="#3B82F6", linewidth=2)
-    ax.axvline(optimal_price, linestyle='--', color="#22C55E")
+        ax.set_facecolor("#0A0F1C")
+        fig.patch.set_facecolor("#0A0F1C")
 
-    ax.set_facecolor("#0A0F1C")
-    fig.patch.set_facecolor("#0A0F1C")
+        ax.tick_params(colors='white')
+        ax.set_xlabel("Price", color='white')
+        ax.set_ylabel("Revenue", color='white')
 
-    ax.tick_params(colors='white')
-    ax.xaxis.label.set_color('white')
-    ax.yaxis.label.set_color('white')
-
-    ax.set_xlabel("Price")
-    ax.set_ylabel("Revenue")
-
-    st.pyplot(fig)
+        st.pyplot(fig)
