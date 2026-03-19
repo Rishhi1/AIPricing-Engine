@@ -14,90 +14,31 @@ st.set_page_config(page_title="Pricing Dashboard", layout="wide")
 # -----------------------------
 st.markdown("""
 <style>
+.stApp { background-color: #0A0F1C; color: #E5E7EB; }
+[data-testid="stSidebar"] { background-color: #020617; }
+.block-container { padding-top: 1.5rem; max-width: 1200px; }
+h1 { font-size: 30px !important; font-weight: 600; }
 
-/* Background */
-.stApp {
-    background-color: #0A0F1C;
-    color: #E5E7EB;
-}
-
-/* Sidebar */
-[data-testid="stSidebar"] {
-    background-color: #020617;
-}
-
-/* Main container */
-.block-container {
-    padding-top: 1.5rem;
-    max-width: 1200px;
-}
-
-/* Title */
-h1 {
-    font-size: 30px !important;
-    font-weight: 600;
-}
-
-/* Cards */
-.card {
-    background: rgba(255,255,255,0.04);
-    padding: 20px;
-    border-radius: 14px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.08);
-}
-
-/* Metrics */
 [data-testid="stMetric"] {
     background: rgba(255,255,255,0.03);
     padding: 15px;
     border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.05);
 }
 
-/* Button */
 div.stButton > button {
     background: #2563EB;
     color: white !important;
     border-radius: 8px;
     height: 42px;
     font-weight: 600;
-    border: none;
-    transition: 0.3s;
 }
 
-div.stButton > button:hover {
-    background: #1D4ED8;
-    transform: translateY(-1px);
-}
-
-/* Inputs */
 input {
     background-color: #020617 !important;
     color: #E5E7EB !important;
 }
-
-/* Divider */
-hr {
-    border-color: rgba(255,255,255,0.08);
-}
-
 </style>
 """, unsafe_allow_html=True)
-# -----------------------------
-# DATA HANDLING (NEW)
-# -----------------------------
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-
-    st.subheader("Dataset Preview")
-    st.dataframe(df.head())
-
-    # Let user select target
-    target_column = st.selectbox("Select Target Column", df.columns)
-else:
-    df = None
-    target_column = None
 
 # -----------------------------
 # LOAD MODEL
@@ -110,28 +51,39 @@ feature_columns = model.feature_names_in_
 # -----------------------------
 st.sidebar.title("Pricing Controls")
 
-# Upload dataset
+# Upload dataset (Version 2 prep)
 uploaded_file = st.sidebar.file_uploader("Upload CSV")
 
-# Default manual price input
 price = st.sidebar.number_input("Product Price", value=100.0)
-
 run = st.sidebar.button("Run Analysis")
+
 # -----------------------------
 # HEADER
 # -----------------------------
 st.title("Dynamic Pricing Dashboard")
 st.caption("Machine learning powered revenue optimization")
-
 st.markdown("---")
+
+# -----------------------------
+# DATA HANDLING
+# -----------------------------
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    st.subheader("Dataset Preview")
+    st.dataframe(df.head())
+
+    target_column = st.selectbox("Select Target Column", df.columns)
+else:
+    df = None
+    target_column = None
 
 # -----------------------------
 # FUNCTIONS
 # -----------------------------
 def predict_sales(price):
-    df = pd.DataFrame([{"price": price}])
-    df = df.reindex(columns=feature_columns, fill_value=0)
-    return max(0, model.predict(df)[0])
+    df_input = pd.DataFrame([{"price": price}])
+    df_input = df_input.reindex(columns=feature_columns, fill_value=0)
+    return max(0, model.predict(df_input)[0])
 
 def optimize_price(price):
     prices = np.linspace(price * 0.8, price * 1.2, 50)
@@ -153,15 +105,11 @@ def optimize_price(price):
 # -----------------------------
 if run:
 
-    # -----------------------------
-    # Case 1: Dataset uploaded
-    # -----------------------------
+    # Dataset mode (future feature)
     if df is not None and target_column is not None:
-        st.warning("Dataset mode coming in Version 2 (pipeline upgrade needed)")
-    
-    # -----------------------------
-    # Case 2: Default pricing model
-    # -----------------------------
+        st.warning("Dataset mode will be implemented in Version 2")
+
+    # Default pricing model
     else:
         sales = predict_sales(price)
         revenue = sales * price
@@ -180,22 +128,22 @@ if run:
 
         st.metric("Improvement (%)", f"{improvement:.2f}%")
 
-    # Graph
-    st.markdown("### Price Optimization Curve")
+        # Graph
+        st.markdown("### Price Optimization Curve")
 
-    fig, ax = plt.subplots(figsize=(9,4))
+        fig, ax = plt.subplots(figsize=(9,4))
 
-    ax.plot(prices, revenues, color="#3B82F6", linewidth=2)
-    ax.axvline(optimal_price, linestyle='--', color="#22C55E")
+        ax.plot(prices, revenues, color="#3B82F6", linewidth=2)
+        ax.axvline(optimal_price, linestyle='--', color="#22C55E")
 
-    ax.set_facecolor("#0A0F1C")
-    fig.patch.set_facecolor("#0A0F1C")
+        ax.set_facecolor("#0A0F1C")
+        fig.patch.set_facecolor("#0A0F1C")
 
-    ax.tick_params(colors='white')
-    ax.xaxis.label.set_color('white')
-    ax.yaxis.label.set_color('white')
+        ax.tick_params(colors='white')
+        ax.xaxis.label.set_color('white')
+        ax.yaxis.label.set_color('white')
 
-    ax.set_xlabel("Price")
-    ax.set_ylabel("Revenue")
+        ax.set_xlabel("Price")
+        ax.set_ylabel("Revenue")
 
-    st.pyplot(fig)
+        st.pyplot(fig)
