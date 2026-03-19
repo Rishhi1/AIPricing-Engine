@@ -41,11 +41,6 @@ div.stButton > button {
 </style>
 """, unsafe_allow_html=True)
 
-# -----------------------------
-# LOAD DEFAULT MODEL
-# -----------------------------
-model = joblib.load("best_model.pkl")
-feature_columns = model.feature_names_in_
 
 # -----------------------------
 # SIDEBAR
@@ -81,8 +76,7 @@ else:
 # -----------------------------
 def preprocess_data(df, target_column):
     df = df.drop_duplicates()
-    df = df.fillna(method="ffill")
-
+    df = df.ffill()
     y = df[target_column]
     X = df.drop(columns=[target_column])
 
@@ -136,20 +130,7 @@ def predict_sales(price):
     df_input = df_input.reindex(columns=feature_columns, fill_value=0)
     return max(0, model.predict(df_input)[0])
 
-def optimize_price(price):
-    prices = np.linspace(price * 0.8, price * 1.2, 50)
-    revenues = []
 
-    for p in prices:
-        pred = predict_sales(p)
-        revenues.append(pred * p)
-
-    prices = np.array(prices)
-    revenues = np.array(revenues)
-
-    best_idx = np.argmax(revenues)
-
-    return prices, revenues, prices[best_idx], revenues[best_idx]
 
 # -----------------------------
 # RESULTS
@@ -204,26 +185,7 @@ if run:
 
         st.metric("Improvement (%)", f"{improvement:.2f}%")
 
-    # -----------------------------
-    # DEFAULT MODE (OLD)
-    # -----------------------------
-    else:
-
-        sales = predict_sales(price)
-        revenue = sales * price
-
-        prices, revenues, optimal_price, max_revenue = optimize_price(price)
-
-        improvement = ((max_revenue - revenue) / revenue) * 100 if revenue != 0 else 0
-
-        col1, col2, col3, col4 = st.columns(4)
-
-        col1.metric("Sales", f"{sales:.2f}")
-        col2.metric("Revenue", f"{revenue:.2f}")
-        col3.metric("Optimal Price", f"{optimal_price:.2f}")
-        col4.metric("Max Revenue", f"{max_revenue:.2f}")
-
-        st.metric("Improvement (%)", f"{improvement:.2f}%")
+    
 
     # -----------------------------
     # GRAPH (COMMON)
