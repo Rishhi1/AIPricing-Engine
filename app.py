@@ -68,6 +68,36 @@ st.sidebar.title("Pricing Controls")
 uploaded_file = st.sidebar.file_uploader("Upload CSV")
 price = st.sidebar.number_input("Base Price", value=100.0)
 run = st.sidebar.button("Run Analysis")
+st.markdown("""
+<style>
+/* Scroll to top button */
+#scrollTopBtn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, #2563EB, #1D4ED8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 9999;
+    transition: all 0.3s ease;
+}
+
+#scrollTopBtn:hover {
+    transform: scale(1.1);
+    background: linear-gradient(135deg, #3B82F6, #2563EB);
+}
+</style>
+
+<button id="scrollTopBtn" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
+⬆️
+</button>
+""", unsafe_allow_html=True)
 
 # -----------------------------
 # HEADER
