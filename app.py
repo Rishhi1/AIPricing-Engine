@@ -338,42 +338,38 @@ if "chat" not in st.session_state:
 
 user_query = st.chat_input("Ask about your data, pricing, or predictions...")
 
-def smart_response(query):
-    query = query.lower()
+def smart_ai_chat(query):
+    query_lower = query.lower()
 
     df = st.session_state.get("df")
     optimal_price = st.session_state.get("optimal_price")
     max_revenue = st.session_state.get("max_revenue")
     base_revenue = st.session_state.get("base_revenue")
 
-    if df is None:
-        return "Please upload data and run analysis first."
+    # 🔥 1. Dynamic prediction (highest priority)
+    dynamic = dynamic_prediction_response(query)
+    if dynamic:
+        return dynamic
 
-    if "optimal price" in query:
+    # 🔥 2. Dataset understanding
+    if df is not None:
+        if "columns" in query_lower:
+            return f"Columns: {', '.join(df.columns)}"
+
+        elif "rows" in query_lower:
+            return f"Dataset has {df.shape[0]} rows"
+
+        elif "summary" in query_lower:
+            return df.describe().to_string()
+
+    # 🔥 3. Model insights
+    if "optimal price" in query_lower:
         return f"Optimal price is {optimal_price:.2f}"
 
-    elif "revenue" in query:
-        return f"Base revenue is {base_revenue:.2f} and max revenue is {max_revenue:.2f}"
+    elif "revenue" in query_lower:
+        return f"Base revenue: {base_revenue:.2f}, Max revenue: {max_revenue:.2f}"
 
-    elif "improvement" in query:
-        improvement = ((max_revenue - base_revenue) / base_revenue) * 100 if base_revenue != 0 else 0
-        return f"Revenue can improve by {improvement:.2f}%"
+    elif "improve" in query_lower:
+        return "You can improve results by adding features like seasonality, demand trends, or competitor pricing."
 
-    elif "columns" in query:
-        return f"Dataset columns are: {', '.join(df.columns)}"
-
-    elif "rows" in query:
-        return f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns"
-
-    else:
-        return "Ask about optimal price, revenue, dataset, or improvement."
-
-if user_query:
-    reply = smart_response(user_query)
-
-    st.session_state.chat.append(("You", user_query))
-    st.session_state.chat.append(("AI", reply))
-
-for role, msg in st.session_state.chat:
-    with st.chat_message("user" if role=="You" else "assistant"):
-        st.write(msg)
+    return "Ask me about predictions, price, revenue, dataset insights, or improvements."
