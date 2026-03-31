@@ -19,7 +19,10 @@ st.set_page_config(page_title="Pricing Dashboard", layout="wide")
 # -----------------------------
 st.markdown("""
 <style>
-.stApp { background-color: #0A0F1C; color: #E5E7EB; }
+.stApp {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
 [data-testid="stSidebar"] { background-color: #020617; }
 .block-container { padding-top: 1.5rem; max-width: 1200px; }
 
