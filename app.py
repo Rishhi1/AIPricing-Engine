@@ -287,3 +287,55 @@ if user_input:
 
 for role, msg in st.session_state.chat_history:
     st.write(f"**{role}:** {msg}")
+
+
+# -----------------------------
+# AI CHATBOT (SMART)
+# -----------------------------
+st.markdown("---")
+st.subheader("🤖 AI Pricing Assistant")
+
+if "chat" not in st.session_state:
+    st.session_state.chat = []
+
+user_query = st.chat_input("Ask about your data, pricing, or predictions...")
+
+def smart_response(query):
+    query = query.lower()
+
+    df = st.session_state.get("df")
+    optimal_price = st.session_state.get("optimal_price")
+    max_revenue = st.session_state.get("max_revenue")
+    base_revenue = st.session_state.get("base_revenue")
+
+    if df is None:
+        return "Please upload data and run analysis first."
+
+    if "optimal price" in query:
+        return f"Optimal price is {optimal_price:.2f}"
+
+    elif "revenue" in query:
+        return f"Base revenue is {base_revenue:.2f} and max revenue is {max_revenue:.2f}"
+
+    elif "improvement" in query:
+        improvement = ((max_revenue - base_revenue) / base_revenue) * 100 if base_revenue != 0 else 0
+        return f"Revenue can improve by {improvement:.2f}%"
+
+    elif "columns" in query:
+        return f"Dataset columns are: {', '.join(df.columns)}"
+
+    elif "rows" in query:
+        return f"Dataset has {df.shape[0]} rows and {df.shape[1]} columns"
+
+    else:
+        return "Ask about optimal price, revenue, dataset, or improvement."
+
+if user_query:
+    reply = smart_response(user_query)
+
+    st.session_state.chat.append(("You", user_query))
+    st.session_state.chat.append(("AI", reply))
+
+for role, msg in st.session_state.chat:
+    with st.chat_message("user" if role=="You" else "assistant"):
+        st.write(msg)
